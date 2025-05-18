@@ -10,6 +10,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import EvaluationPage from "./pages/EvaluationPage";
+import MessagesPage from "./pages/MessagesPage";
 import UserPage from "./pages/UserPage";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -33,6 +34,7 @@ const AppWithProviders = () => (
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/anuncios" element={<AnnouncementsPage />} />
             <Route path="/evaluaciones" element={<EvaluationPage />} />
+            <Route path="/mensajes" element={<MessagesPage />} />
             <Route path="/usuario" element={<UserPage />} />
           </Route>
           

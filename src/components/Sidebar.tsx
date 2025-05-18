@@ -23,6 +23,11 @@ const Sidebar: React.FC = () => {
       path: "/evaluaciones",
     },
     {
+      icon: MessageSquare,
+      label: "Mensajes",
+      path: "/mensajes",
+    },
+    {
       icon: Home,
       label: "Inicio",
       path: "/",
