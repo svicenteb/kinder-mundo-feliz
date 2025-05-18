@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, getDay } from "date-fns";
 import { es } from "date-fns/locale";
@@ -31,7 +32,8 @@ import { cn } from "@/lib/utils";
 import { v4 as uuidv4 } from "uuid";
 import { useToast } from "@/hooks/use-toast";
 
-interface Event {
+// Export the Event interface so it can be imported by other components
+export interface Event {
   id: string;
   title: string;
   date: Date;
