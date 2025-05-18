@@ -68,11 +68,12 @@ const StudentEvaluation = () => {
     queryFn: async () => {
       if (!user || !selectedStudent) return null;
       
+      // Use the generic query method since TypeScript doesn't know about the evaluations table
       const { data, error } = await supabase
-        .from("evaluations")
-        .select("*")
-        .eq("student_id", selectedStudent.id)
-        .maybeSingle();
+        .from('evaluations')
+        .select('*')
+        .eq('student_id', selectedStudent.id)
+        .maybeSingle() as { data: Evaluation | null, error: any };
       
       if (error && error.code !== "PGRST116") { // PGRST116 is "no rows returned"
         toast({
@@ -86,24 +87,26 @@ const StudentEvaluation = () => {
       return data;
     },
     enabled: !!user && !!selectedStudent,
-    onSuccess: (data) => {
-      if (data) {
-        setEvaluation({
-          behavior: data.behavior || "",
-          academic: data.academic || "",
-          social: data.social || "",
-          comments: data.comments || "",
-        });
-      } else {
-        setEvaluation({
-          behavior: "",
-          academic: "",
-          social: "",
-          comments: "",
-        });
-      }
-    }
   });
+
+  // Set evaluation form values when existingEvaluation changes
+  useState(() => {
+    if (existingEvaluation) {
+      setEvaluation({
+        behavior: existingEvaluation.behavior || "",
+        academic: existingEvaluation.academic || "",
+        social: existingEvaluation.social || "",
+        comments: existingEvaluation.comments || "",
+      });
+    } else {
+      setEvaluation({
+        behavior: "",
+        academic: "",
+        social: "",
+        comments: "",
+      });
+    }
+  }, [existingEvaluation]);
 
   // Save evaluation mutation
   const saveEvaluation = useMutation({
@@ -113,7 +116,7 @@ const StudentEvaluation = () => {
       if (existingEvaluation) {
         // Update existing evaluation
         const { data, error } = await supabase
-          .from("evaluations")
+          .from('evaluations')
           .update({
             behavior: evaluationData.behavior,
             academic: evaluationData.academic,
@@ -122,15 +125,14 @@ const StudentEvaluation = () => {
             updated_at: new Date().toISOString(),
           })
           .eq("id", existingEvaluation.id)
-          .select()
-          .single();
+          .select() as { data: Evaluation | null, error: any };
         
         if (error) throw error;
         return data;
       } else {
         // Insert new evaluation
         const { data, error } = await supabase
-          .from("evaluations")
+          .from('evaluations')
           .insert({
             student_id: evaluationData.student_id,
             behavior: evaluationData.behavior,
@@ -139,8 +141,7 @@ const StudentEvaluation = () => {
             comments: evaluationData.comments,
             user_id: user.id,
           })
-          .select()
-          .single();
+          .select() as { data: Evaluation | null, error: any };
         
         if (error) throw error;
         return data;
