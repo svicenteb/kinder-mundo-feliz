@@ -50,8 +50,9 @@ const Announcements = () => {
         setIsLoading(true);
         if (!user) return;
 
+        // We need to use a type assertion here since the Supabase types don't include the announcements table yet
         const { data, error } = await supabase
-          .from("announcements")
+          .from("announcements" as any)
           .select("*")
           .order("date", { ascending: false });
 
@@ -66,7 +67,7 @@ const Announcements = () => {
         }
 
         // Convert date strings to Date objects for display
-        const formattedData = data.map(announcement => ({
+        const formattedData = data.map((announcement: any) => ({
           ...announcement,
           date: new Date(announcement.date)
         }));
@@ -120,8 +121,8 @@ const Announcements = () => {
 
       // Insert the new announcement into Supabase
       const { error } = await supabase
-        .from("announcements")
-        .insert(newAnnouncementData);
+        .from("announcements" as any)
+        .insert(newAnnouncementData as any);
 
       if (error) {
         console.error("Error creating announcement:", error);
@@ -167,7 +168,7 @@ const Announcements = () => {
 
       // Delete the announcement from Supabase
       const { error } = await supabase
-        .from("announcements")
+        .from("announcements" as any)
         .delete()
         .eq("id", id);
 
