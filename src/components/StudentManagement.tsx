@@ -1,95 +1,142 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Pencil, Trash } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Student {
   id: string;
   name: string;
   age: number;
-  group: string;
-  parentName: string;
+  group_name: string;
+  parent_name: string;
   contact: string;
 }
 
 const StudentManagement = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isAddingStudent, setIsAddingStudent] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: "1",
-      name: "Ana García",
-      age: 5,
-      group: "Preescolar A",
-      parentName: "María García",
-      contact: "555-1234"
-    },
-    {
-      id: "2",
-      name: "Carlos Rodríguez",
-      age: 4,
-      group: "Preescolar B",
-      parentName: "José Rodríguez",
-      contact: "555-5678"
-    },
-    {
-      id: "3",
-      name: "Sofía López",
-      age: 5,
-      group: "Preescolar A",
-      parentName: "Ana López",
-      contact: "555-9012"
-    }
-  ]);
+  const [students, setStudents] = useState<Student[]>([]);
   
   const [newStudent, setNewStudent] = useState<Omit<Student, "id">>({
     name: "",
     age: 4,
-    group: "Preescolar A",
-    parentName: "",
+    group_name: "Preescolar A",
+    parent_name: "",
     contact: ""
   });
 
-  const handleAddStudent = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const student: Student = {
-      ...newStudent,
-      id: Date.now().toString()
-    };
-    
-    setStudents([...students, student]);
-    setNewStudent({
-      name: "",
-      age: 4,
-      group: "Preescolar A",
-      parentName: "",
-      contact: ""
-    });
-    setIsAddingStudent(false);
-    
-    toast({
-      title: "Estudiante agregado",
-      description: `${student.name} ha sido agregado exitosamente.`,
-    });
+  useEffect(() => {
+    if (user) {
+      fetchStudents();
+    }
+  }, [user]);
+
+  const fetchStudents = async () => {
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase
+        .from("students")
+        .select("*")
+        .order("name", { ascending: true });
+      
+      if (error) {
+        throw error;
+      }
+      
+      setStudents(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error al cargar estudiantes",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteStudent = (id: string) => {
-    const student = students.find(s => s.id === id);
-    if (!student) return;
+  const handleAddStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    setStudents(students.filter(s => s.id !== id));
+    if (!user) return;
     
-    toast({
-      title: "Estudiante eliminado",
-      description: `${student.name} ha sido eliminado exitosamente.`,
-    });
+    try {
+      const newStudentData = {
+        ...newStudent,
+        user_id: user.id,
+      };
+      
+      const { data, error } = await supabase
+        .from("students")
+        .insert(newStudentData)
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      setStudents([...students, data]);
+      setNewStudent({
+        name: "",
+        age: 4,
+        group_name: "Preescolar A",
+        parent_name: "",
+        contact: ""
+      });
+      setIsAddingStudent(false);
+      
+      toast({
+        title: "Estudiante agregado",
+        description: `${newStudent.name} ha sido agregado exitosamente.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error al agregar estudiante",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteStudent = async (id: string) => {
+    try {
+      const student = students.find(s => s.id === id);
+      if (!student) return;
+      
+      const { error } = await supabase
+        .from("students")
+        .delete()
+        .eq("id", id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      setStudents(students.filter(s => s.id !== id));
+      
+      toast({
+        title: "Estudiante eliminado",
+        description: `${student.name} ha sido eliminado exitosamente.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error al eliminar estudiante",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredStudents = students.filter(student => 
@@ -149,8 +196,8 @@ const StudentManagement = () => {
               <div className="space-y-2">
                 <Label htmlFor="group">Grupo</Label>
                 <Select 
-                  value={newStudent.group}
-                  onValueChange={(value) => setNewStudent({...newStudent, group: value})}
+                  value={newStudent.group_name}
+                  onValueChange={(value) => setNewStudent({...newStudent, group_name: value})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar grupo" />
@@ -167,8 +214,8 @@ const StudentManagement = () => {
                 <Label htmlFor="parentName">Nombre del padre/tutor</Label>
                 <Input
                   id="parentName"
-                  value={newStudent.parentName}
-                  onChange={(e) => setNewStudent({...newStudent, parentName: e.target.value})}
+                  value={newStudent.parent_name}
+                  onChange={(e) => setNewStudent({...newStudent, parent_name: e.target.value})}
                   required
                 />
               </div>
@@ -196,47 +243,54 @@ const StudentManagement = () => {
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Nombre</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Edad</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Grupo</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Padre/Tutor</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Contacto</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">{student.name}</td>
-                    <td className="px-4 py-3 text-sm">{student.age} años</td>
-                    <td className="px-4 py-3 text-sm">{student.group}</td>
-                    <td className="px-4 py-3 text-sm">{student.parentName}</td>
-                    <td className="px-4 py-3 text-sm">{student.contact}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0 text-red-500"
-                          onClick={() => handleDeleteStudent(student.id)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
+          {isLoading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin h-6 w-6 border-2 border-kindergarten-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-gray-500">Cargando estudiantes...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Nombre</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Edad</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Grupo</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Padre/Tutor</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Contacto</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {filteredStudents.length === 0 && (
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredStudents.map((student) => (
+                    <tr key={student.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm">{student.name}</td>
+                      <td className="px-4 py-3 text-sm">{student.age} años</td>
+                      <td className="px-4 py-3 text-sm">{student.group_name}</td>
+                      <td className="px-4 py-3 text-sm">{student.parent_name}</td>
+                      <td className="px-4 py-3 text-sm">{student.contact}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex space-x-2">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 text-red-500"
+                            onClick={() => handleDeleteStudent(student.id)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {!isLoading && filteredStudents.length === 0 && (
             <div className="p-8 text-center">
               <p className="text-gray-500">No se encontraron estudiantes</p>
             </div>
