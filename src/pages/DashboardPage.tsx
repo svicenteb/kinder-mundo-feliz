@@ -39,7 +39,7 @@ const DashboardPage = () => {
               <Calendar events={events} onEventsChange={handleEventsChange} />
             </div>
             <div>
-              <UpcomingEvents events={events} />
+              <UpcomingEvents events={events} onEventsChange={handleEventsChange} />
             </div>
           </div>
         </div>
