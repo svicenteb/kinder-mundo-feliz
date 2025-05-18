@@ -1,10 +1,35 @@
-
 import { useState } from "react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, getDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar as CalendarUI } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { v4 as uuidv4 } from "uuid";
+import { useToast } from "@/hooks/use-toast";
 
 interface Event {
   id: string;
@@ -13,25 +38,53 @@ interface Event {
   description: string;
 }
 
-const Calendar = () => {
+const formSchema = z.object({
+  title: z.string().min(1, "El título es requerido"),
+  description: z.string(),
+  date: z.date({
+    required_error: "La fecha es requerida",
+  }),
+});
+
+interface CalendarProps {
+  events: Event[];
+  onEventsChange: (events: Event[]) => void;
+}
+
+const Calendar = ({ events, onEventsChange }: CalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: "1",
-      title: "Día del Niño",
-      date: new Date(2025, 4, 17), // Months are 0-indexed in JS, so 4 = May
-      description: "Celebración del día del niño"
-    },
-    {
-      id: "2",
-      title: "Feriado",
-      date: new Date(2025, 4, 20), // Months are 0-indexed in JS, so 4 = May
-      description: "Día feriado nacional"
-    }
-  ]);
-  
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
   const isMobile = useIsMobile();
 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      date: new Date(),
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    const newEvent: Event = {
+      id: uuidv4(),
+      title: values.title,
+      description: values.description,
+      date: values.date,
+    };
+    
+    const updatedEvents = [...events, newEvent];
+    onEventsChange(updatedEvents);
+    setIsDialogOpen(false);
+    form.reset();
+    
+    toast({
+      title: "Evento creado",
+      description: "El evento ha sido añadido correctamente",
+    });
+  };
+  
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -139,9 +192,108 @@ const Calendar = () => {
         })}
       </div>
       
-      <Button className="mt-4 w-full bg-kindergarten-primary hover:bg-kindergarten-primary/90">
+      <Button 
+        className="mt-4 w-full bg-kindergarten-primary hover:bg-kindergarten-primary/90"
+        onClick={() => setIsDialogOpen(true)}
+      >
         <Plus className="h-4 w-4 mr-2" /> Crear Nuevo Evento
       </Button>
+
+      {/* Event Creation Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Evento</DialogTitle>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Título</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Título del evento" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Fecha</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP", { locale: es })
+                            ) : (
+                              <span>Selecciona una fecha</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarUI
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descripción</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Descripción del evento" 
+                        className="resize-none" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit">Guardar</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

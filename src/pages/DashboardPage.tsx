@@ -1,10 +1,30 @@
 
-import Calendar from "@/components/Calendar";
+import { useState } from "react";
+import Calendar, { Event } from "@/components/Calendar";
 import UpcomingEvents from "@/components/UpcomingEvents";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 
 const DashboardPage = () => {
+  const [events, setEvents] = useState<Event[]>([
+    {
+      id: "1",
+      title: "Día del Niño",
+      date: new Date(2025, 4, 17), // Months are 0-indexed in JS, so 4 = May
+      description: "Celebración del día del niño"
+    },
+    {
+      id: "2",
+      title: "Feriado",
+      date: new Date(2025, 4, 20), // Months are 0-indexed in JS, so 4 = May
+      description: "Día feriado nacional"
+    }
+  ]);
+
+  const handleEventsChange = (updatedEvents: Event[]) => {
+    setEvents(updatedEvents);
+  };
+
   return (
     <div className="min-h-screen bg-kindergarten-background">
       <TopBar />
@@ -16,10 +36,10 @@ const DashboardPage = () => {
           
           <div className="grid md:grid-cols-3 gap-6">
             <div className="md:col-span-2">
-              <Calendar />
+              <Calendar events={events} onEventsChange={handleEventsChange} />
             </div>
             <div>
-              <UpcomingEvents />
+              <UpcomingEvents events={events} />
             </div>
           </div>
         </div>
