@@ -1,8 +1,10 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, User } from "lucide-react";
+import { Bell, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TopBarProps {
   schoolName?: string;
@@ -11,10 +13,51 @@ interface TopBarProps {
 }
 
 const TopBar: React.FC<TopBarProps> = ({ 
-  schoolName = "Colegio Demo", 
-  userName = "Usuario Demo", 
-  userRole = "Director" 
+  schoolName: defaultSchoolName = "Colegio Demo", 
+  userName: defaultUserName = "Usuario Demo", 
+  userRole: defaultUserRole = "Director" 
 }) => {
+  const { user, signOut } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user?.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const userName = profile?.first_name && profile?.last_name 
+    ? `${profile.first_name} ${profile.last_name}` 
+    : defaultUserName;
+
+  const schoolName = profile?.school_name || defaultSchoolName;
+  const userRole = profile?.role || defaultUserRole;
+
+  const handleSignOut = () => {
+    signOut();
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 h-16 bg-kindergarten-dark text-white shadow-md z-10 flex items-center justify-between px-4">
       <div className="flex items-center">
@@ -40,6 +83,9 @@ const TopBar: React.FC<TopBarProps> = ({
             </Link>
           </Button>
         </div>
+        <Button variant="ghost" onClick={handleSignOut} className="p-1">
+          <LogOut className="h-5 w-5 text-gray-300 hover:text-white" />
+        </Button>
       </div>
     </div>
   );

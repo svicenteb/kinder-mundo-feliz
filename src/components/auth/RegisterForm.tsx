@@ -1,65 +1,71 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const RegisterForm = () => {
-  const [name, setName] = useState("");
-  const [school, setSchool] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [schoolName, setSchoolName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Las contraseñas no coinciden",
-        variant: "destructive",
-      });
       return;
     }
     
     setIsLoading(true);
     
-    // Simulamos un registro
-    setTimeout(() => {
-      toast({
-        title: "Registro exitoso",
-        description: "Ahora puede iniciar sesión",
+    try {
+      await signUp(email, password, {
+        firstName,
+        lastName,
+        schoolName
       });
-      navigate("/login");
+    } catch (error) {
+      console.error("Error during registration:", error);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
     <div className="w-full max-w-md mx-auto">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Nombre completo</Label>
+          <Label htmlFor="firstName">Nombre</Label>
           <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            id="firstName"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
             required
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="school">Nombre de la escuela</Label>
+          <Label htmlFor="lastName">Apellido</Label>
           <Input
-            id="school"
-            value={school}
-            onChange={(e) => setSchool(e.target.value)}
+            id="lastName"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="schoolName">Nombre de la escuela</Label>
+          <Input
+            id="schoolName"
+            value={schoolName}
+            onChange={(e) => setSchoolName(e.target.value)}
             required
           />
         </div>

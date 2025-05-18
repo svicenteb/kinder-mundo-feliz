@@ -1,32 +1,27 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulamos un inicio de sesión
-    setTimeout(() => {
-      localStorage.setItem("user", JSON.stringify({ name: "Usuario Demo", role: "Director" }));
-      toast({
-        title: "Inicio de sesión exitoso",
-        description: "Bienvenido a KinderCRM",
-      });
-      navigate("/dashboard");
+    try {
+      await signIn(email, password);
+    } catch (error) {
+      console.error("Error during sign in:", error);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

@@ -12,28 +12,41 @@ import AnnouncementsPage from "./pages/AnnouncementsPage";
 import EvaluationPage from "./pages/EvaluationPage";
 import UserPage from "./pages/UserPage";
 import NotFound from "./pages/NotFound";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const AppWithProviders = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <AuthProvider>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/anuncios" element={<AnnouncementsPage />} />
-          <Route path="/evaluaciones" element={<EvaluationPage />} />
-          <Route path="/usuario" element={<UserPage />} />
+          
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/anuncios" element={<AnnouncementsPage />} />
+            <Route path="/evaluaciones" element={<EvaluationPage />} />
+            <Route path="/usuario" element={<UserPage />} />
+          </Route>
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
+);
+
+const App = () => (
+  <BrowserRouter>
+    <AppWithProviders />
+  </BrowserRouter>
 );
 
 export default App;
