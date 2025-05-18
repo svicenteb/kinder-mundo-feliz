@@ -6,7 +6,7 @@ import { Event } from "./Calendar";
 import { Button } from "./ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuthContext } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "./ui/spinner";
 
 interface UpcomingEventsProps {
@@ -17,7 +17,7 @@ interface UpcomingEventsProps {
 
 const UpcomingEvents = ({ events, onEventsChange, isLoading = false }: UpcomingEventsProps) => {
   const { toast } = useToast();
-  const { session } = useAuthContext();
+  const { session } = useAuth();
   const user = session?.user;
   
   // Sort events by date (closest first)

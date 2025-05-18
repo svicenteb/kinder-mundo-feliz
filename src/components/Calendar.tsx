@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { v4 as uuidv4 } from "uuid";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuthContext } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 
 // Export the Event interface so it can be imported by other components
@@ -63,7 +63,7 @@ const Calendar = ({ events, onEventsChange, isLoading = false }: CalendarProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { session } = useAuthContext();
+  const { session } = useAuth();
   const user = session?.user;
 
   const form = useForm<z.infer<typeof formSchema>>({

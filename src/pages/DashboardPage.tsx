@@ -6,13 +6,13 @@ import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuthContext } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DashboardPage = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { session } = useAuthContext();
+  const { session } = useAuth();
   const user = session?.user;
 
   // Fetch events from Supabase
