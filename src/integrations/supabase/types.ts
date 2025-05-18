@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      evaluations: {
+        Row: {
+          academic: string
+          behavior: string
+          comments: string | null
+          created_at: string
+          id: string
+          social: string
+          student_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          academic: string
+          behavior: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          social: string
+          student_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          academic?: string
+          behavior?: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          social?: string
+          student_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

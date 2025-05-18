@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +23,7 @@ interface Evaluation {
   academic: string;
   social: string;
   comments: string;
+  user_id?: string;
 }
 
 const StudentEvaluation = () => {
@@ -30,7 +31,7 @@ const StudentEvaluation = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [evaluation, setEvaluation] = useState<Omit<Evaluation, "student_id">>({
+  const [evaluation, setEvaluation] = useState<Omit<Evaluation, "student_id" | "user_id">>({
     behavior: "",
     academic: "",
     social: "",
@@ -68,7 +69,7 @@ const StudentEvaluation = () => {
     queryFn: async () => {
       if (!user || !selectedStudent) return null;
       
-      // Use the generic query method since TypeScript doesn't know about the evaluations table
+      // Use type assertion to bypass TypeScript errors
       const { data, error } = await supabase
         .from('evaluations')
         .select('*')
@@ -89,8 +90,8 @@ const StudentEvaluation = () => {
     enabled: !!user && !!selectedStudent,
   });
 
-  // Set evaluation form values when existingEvaluation changes
-  useState(() => {
+  // Update evaluation form when existingEvaluation changes
+  useEffect(() => {
     if (existingEvaluation) {
       setEvaluation({
         behavior: existingEvaluation.behavior || "",
@@ -114,7 +115,7 @@ const StudentEvaluation = () => {
       if (!user) throw new Error("Usuario no autenticado");
       
       if (existingEvaluation) {
-        // Update existing evaluation
+        // Update existing evaluation using type assertion
         const { data, error } = await supabase
           .from('evaluations')
           .update({
@@ -130,7 +131,7 @@ const StudentEvaluation = () => {
         if (error) throw error;
         return data;
       } else {
-        // Insert new evaluation
+        // Insert new evaluation using type assertion
         const { data, error } = await supabase
           .from('evaluations')
           .insert({
