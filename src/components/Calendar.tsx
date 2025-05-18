@@ -31,6 +31,9 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { v4 as uuidv4 } from "uuid";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { Spinner } from "@/components/ui/spinner";
 
 // Export the Event interface so it can be imported by other components
 export interface Event {
@@ -51,13 +54,17 @@ const formSchema = z.object({
 interface CalendarProps {
   events: Event[];
   onEventsChange: (events: Event[]) => void;
+  isLoading?: boolean;
 }
 
-const Calendar = ({ events, onEventsChange }: CalendarProps) => {
+const Calendar = ({ events, onEventsChange, isLoading = false }: CalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { session } = useAuthContext();
+  const user = session?.user;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -68,23 +75,69 @@ const Calendar = ({ events, onEventsChange }: CalendarProps) => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Debe iniciar sesión para crear eventos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const eventId = uuidv4();
     const newEvent: Event = {
-      id: uuidv4(),
+      id: eventId,
       title: values.title,
       description: values.description,
       date: values.date,
     };
     
-    const updatedEvents = [...events, newEvent];
-    onEventsChange(updatedEvents);
-    setIsDialogOpen(false);
-    form.reset();
-    
-    toast({
-      title: "Evento creado",
-      description: "El evento ha sido añadido correctamente",
-    });
+    try {
+      // Insert the new event into Supabase
+      const { error } = await supabase
+        .from("calendar_events" as any)
+        .insert({
+          id: eventId,
+          user_id: user.id,
+          title: values.title,
+          description: values.description,
+          date: values.date.toISOString()
+        } as any);
+
+      if (error) {
+        console.error("Error creating event:", error);
+        toast({
+          title: "Error",
+          description: "No se pudo crear el evento",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state after successful database insertion
+      const updatedEvents = [...events, newEvent];
+      onEventsChange(updatedEvents);
+      
+      setIsDialogOpen(false);
+      form.reset();
+      
+      toast({
+        title: "Evento creado",
+        description: "El evento ha sido añadido correctamente",
+      });
+    } catch (error) {
+      console.error("Error creating event:", error);
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al crear el evento",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const monthStart = startOfMonth(currentDate);
@@ -114,6 +167,14 @@ const Calendar = ({ events, onEventsChange }: CalendarProps) => {
   const isToday = (day: Date) => {
     return isSameDay(day, new Date());
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-4 flex items-center justify-center" style={{ minHeight: "500px" }}>
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
@@ -197,6 +258,7 @@ const Calendar = ({ events, onEventsChange }: CalendarProps) => {
       <Button 
         className="mt-4 w-full bg-kindergarten-primary hover:bg-kindergarten-primary/90"
         onClick={() => setIsDialogOpen(true)}
+        disabled={!user}
       >
         <Plus className="h-4 w-4 mr-2" /> Crear Nuevo Evento
       </Button>
@@ -287,10 +349,17 @@ const Calendar = ({ events, onEventsChange }: CalendarProps) => {
                   type="button" 
                   variant="outline" 
                   onClick={() => setIsDialogOpen(false)}
+                  disabled={isSubmitting}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit">Guardar</Button>
+                <Button 
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? <Spinner className="mr-2" size="sm" /> : null}
+                  Guardar
+                </Button>
               </DialogFooter>
             </form>
           </Form>
