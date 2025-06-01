@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,9 +78,10 @@ const StudentManagement = () => {
         user_id: user.id,
       };
       
+      // Cast to any to bypass TypeScript checking for auto-generated code field
       const { data, error } = await supabase
         .from("students")
-        .insert(newStudentData)
+        .insert(newStudentData as any)
         .select()
         .single();
       
