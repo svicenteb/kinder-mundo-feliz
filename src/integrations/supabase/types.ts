@@ -146,6 +146,7 @@ export type Database = {
       students: {
         Row: {
           age: number
+          code: string
           contact: string
           created_at: string | null
           group_name: string
@@ -157,6 +158,7 @@ export type Database = {
         }
         Insert: {
           age: number
+          code: string
           contact: string
           created_at?: string | null
           group_name: string
@@ -168,6 +170,7 @@ export type Database = {
         }
         Update: {
           age?: number
+          code?: string
           contact?: string
           created_at?: string | null
           group_name?: string
@@ -184,7 +187,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_student_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

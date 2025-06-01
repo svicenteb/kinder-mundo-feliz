@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Pencil, Trash } from "lucide-react";
+import { Plus, Search, Pencil, Trash, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -16,6 +16,7 @@ interface Student {
   group_name: string;
   parent_name: string;
   contact: string;
+  code: string;
 }
 
 const StudentManagement = () => {
@@ -27,7 +28,7 @@ const StudentManagement = () => {
   
   const [students, setStudents] = useState<Student[]>([]);
   
-  const [newStudent, setNewStudent] = useState<Omit<Student, "id">>({
+  const [newStudent, setNewStudent] = useState<Omit<Student, "id" | "code">>({
     name: "",
     age: 4,
     group_name: "Preescolar A",
@@ -137,6 +138,14 @@ const StudentManagement = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const copyToClipboard = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({
+      title: "Código copiado",
+      description: "El código ha sido copiado al portapapeles.",
+    });
   };
 
   const filteredStudents = students.filter(student => 
@@ -254,6 +263,7 @@ const StudentManagement = () => {
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Nombre</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Código</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Edad</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Grupo</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Padre/Tutor</th>
@@ -265,6 +275,19 @@ const StudentManagement = () => {
                   {filteredStudents.map((student) => (
                     <tr key={student.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm">{student.name}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono bg-gray-100 px-2 py-1 rounded">{student.code}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => copyToClipboard(student.code)}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-sm">{student.age} años</td>
                       <td className="px-4 py-3 text-sm">{student.group_name}</td>
                       <td className="px-4 py-3 text-sm">{student.parent_name}</td>
